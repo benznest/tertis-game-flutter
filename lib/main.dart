@@ -45,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Timer timer;
 
   int speed = 500;
+  int delayDrag = 200;
   Block block;
   bool draging = false;
 
@@ -177,25 +178,35 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(color: colorBackgroundApp,
           child: Center(
               child: GestureDetector(
+                  onVerticalDragEnd: (details) {
+                    while(moveBlockDown(block)){
+                      setState(() {
+                        initGameAreaTemp();
+                        copyBlockToGameAreaTemp(block);
+                      });
+                    }
+                    print("onVerticalDragEnd details="+details.primaryVelocity.toString());
+                  },
                   onHorizontalDragUpdate: (detail) {
                     if (!draging) {
                       draging = true;
                       setState(() {
-                        bool canMove = false;
+                        bool isMove = false;
                         if (detail.primaryDelta > 0) {
-                          canMove = moveBlockRight(block);
+                          isMove = moveBlockRight(block);
                         } else {
-                          canMove = moveBlockLeft(block);
+                          isMove = moveBlockLeft(block);
                         }
 
-                        if (canMove) {
+                        if (isMove) {
                           initGameAreaTemp();
                           copyBlockToGameAreaTemp(block);
                         }
                       });
-                      print(detail.primaryDelta.toString());
+                      print("primarydelta"+detail.primaryDelta.toString());
+                      print("delta="+detail.delta.toString());
 
-                      Future.delayed(const Duration(milliseconds: 100), () {
+                      Future.delayed(Duration(milliseconds: delayDrag), () {
                         draging = false;
                       });
                     }
