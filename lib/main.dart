@@ -69,6 +69,10 @@ class _MyHomePageState extends State<MyHomePage> {
       moveBlockDown(block);
       copyBlockToGameAreaTemp(block); //copy block to game area temp.
 
+      print("Start block row=" + block.coordinatesBlockAreaStart.row.toString());
+      print("Start block col=" + block.coordinatesBlockAreaStart.col.toString());
+
+
       if (isBlockCrashOnGround(block)) {
         copyBlockToGameArea(block);
         block = createBlock();
@@ -77,41 +81,52 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool moveBlockDown(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       if (c.row + 1 >= COUNT_ROW || !gameArea[c.row + 1][c.col].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    block.coordinatesBlockAreaStart.row++;
+
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       c.row = c.row + 1;
     }
+
     return true;
   }
 
   bool moveBlockRight(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       if (c.col + 1 >= COUNT_COL || !gameArea[c.row][c.col + 1].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    block.coordinatesBlockAreaStart.col++;
+
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       c.col = c.col + 1;
     }
+
+
     return true;
   }
 
   bool moveBlockLeft(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       if (c.col - 1 < 0 || !gameArea[c.row][c.col - 1].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    block.coordinatesBlockAreaStart.col--;
+
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       c.col = c.col - 1;
     }
+
+
     return true;
   }
 
@@ -122,14 +137,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void copyBlockToGameAreaTemp(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       gameAreaTemp[c.row][c.col] =
           AreaUnit(color: block.color, available: false);
     }
   }
 
   void copyBlockToGameArea(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       gameArea[c.row][c.col] = AreaUnit(color: block.color, available: false);
     }
   }
@@ -177,35 +192,58 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: Container(
           color: colorBackgroundApp,
-          child: Center(
-              child: GestureDetector(
-                  onTap: () {
-                    rotateBlock(block);
-                  },
-                  onVerticalDragEnd: (details) {
-                    moveBlockToGround(details);
-                  },
-                  onHorizontalDragUpdate: (detail) {
-                    if (!draging) {
-                      draging = true;
-                      moveBlockHorizontal(detail);
+          child: Column(children: <Widget>[
+            Expanded(
+                child: Center(
+                    child: GestureDetector(
+                        onTap: () {
+                          rotateBlock(block);
+                        },
+                        onVerticalDragEnd: (details) {
+                          moveBlockToGround(details);
+                        },
+                        onHorizontalDragUpdate: (detail) {
+                          if (!draging) {
+                            draging = true;
+                            moveBlockHorizontal(detail);
 //                      print("primarydelta"+detail.primaryDelta.toString());
 //                      print("delta="+detail.delta.toString());
 
-                      Future.delayed(Duration(milliseconds: delayDrag), () {
-                        draging = false;
-                      });
-                    }
-                  },
-                  child: Container(
-                      decoration: BoxDecoration(
-                          border:
+                            Future.delayed(Duration(milliseconds: delayDrag), () {
+                              draging = false;
+                            });
+                          }
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border:
                               Border.all(width: 12, color: colorBorderGameArea),
-                          borderRadius: BorderRadius.all(Radius.circular(8))),
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: buildGameArea()))))),
+                              borderRadius: BorderRadius.all(Radius.circular(8))),
+                          child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: buildGameArea()),
+                        )))),
+            Container(
+                decoration: BoxDecoration(
+                    color: colorBorderGameArea,
+                    borderRadius: BorderRadius.all(Radius.circular(8))),
+                margin: EdgeInsets.only(left: 32, right: 32, bottom: 16),
+                padding: EdgeInsets.all(6),
+                child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Expanded(child: Container(
+                        child: Icon(Icons.keyboard_arrow_left, size: 36, color: Colors.white),
+                      )),
+                      Expanded(child: Container(
+                        child: Icon(Icons.keyboard_arrow_down, size: 36, color: Colors.white),
+                      )),
+                      Expanded(child: Container(
+                        child: Icon(Icons.keyboard_arrow_right, size: 36, color: Colors.white),
+                      )),
+                    ]))
+          ])),
     );
   }
 
@@ -234,7 +272,6 @@ class _MyHomePageState extends State<MyHomePage> {
         copyBlockToGameAreaTemp(block);
       });
     }
-    print("onVerticalDragEnd details=" + details.primaryVelocity.toString());
   }
 
   List<Widget> buildGameArea() {
@@ -281,7 +318,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool isBlockCrashOnGround(Block block) {
-    for (Coordinate c in block.getBlockCurrentRotate()) {
+    for (Coordinate c in block.currentCoordinatesOnGameArea) {
       if (c.row + 1 < COUNT_ROW) {
         if (!gameArea[c.row + 1][c.col].available) {
           return true;
@@ -290,6 +327,7 @@ class _MyHomePageState extends State<MyHomePage> {
         return true;
       }
     }
+
     return false;
   }
 

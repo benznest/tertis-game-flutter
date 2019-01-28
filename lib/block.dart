@@ -25,7 +25,7 @@ class Block {
     for (Coordinate c in coordinatesNextBlock) {
       Coordinate newCoordinate = Coordinate(
           row: coordinatesBlockAreaStart.row + c.row,
-          col: coordinatesBlockAreaStart.row + c.col);
+          col: coordinatesBlockAreaStart.col + c.col);
       listNewCoordinateOnGameArea.add(newCoordinate);
     }
 
