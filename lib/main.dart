@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tertis_game_flutter/area_unit.dart';
 import 'package:tertis_game_flutter/block.dart';
+import 'package:tertis_game_flutter/block/block_s.dart';
 import 'package:tertis_game_flutter/block_provider.dart';
 import 'package:tertis_game_flutter/coordinate.dart';
 import 'package:tertis_game_flutter/game_theme.dart';
@@ -23,7 +24,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-
   MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
@@ -32,13 +32,11 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-
 const int COUNT_ROW = 14;
 const int COUNT_COL = 10;
 const double SIZE_AREA_UNIT = 36;
 
 class _MyHomePageState extends State<MyHomePage> {
-
   List<List<AreaUnit>> gameArea;
   List<List<AreaUnit>> gameAreaTemp;
 
@@ -54,7 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
     initGameArea();
     initGameAreaTemp();
     block = createBlock();
-    timer = Timer.periodic(Duration(milliseconds: speed), (Timer t) => process());
+    timer =
+        Timer.periodic(Duration(milliseconds: speed), (Timer t) => process());
     super.initState();
   }
 
@@ -78,39 +77,39 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool moveBlockDown(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       if (c.row + 1 >= COUNT_ROW || !gameArea[c.row + 1][c.col].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       c.row = c.row + 1;
     }
     return true;
   }
 
   bool moveBlockRight(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       if (c.col + 1 >= COUNT_COL || !gameArea[c.row][c.col + 1].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       c.col = c.col + 1;
     }
     return true;
   }
 
   bool moveBlockLeft(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       if (c.col - 1 < 0 || !gameArea[c.row][c.col - 1].available) {
         return false;
       }
     }
 
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       c.col = c.col - 1;
     }
     return true;
@@ -123,13 +122,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void copyBlockToGameAreaTemp(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
-      gameAreaTemp[c.row][c.col] = AreaUnit(color: block.color, available: false);
+    for (Coordinate c in block.getBlockCurrentRotate()) {
+      gameAreaTemp[c.row][c.col] =
+          AreaUnit(color: block.color, available: false);
     }
   }
 
   void copyBlockToGameArea(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       gameArea[c.row][c.col] = AreaUnit(color: block.color, available: false);
     }
   }
@@ -167,44 +167,30 @@ class _MyHomePageState extends State<MyHomePage> {
 //    gameArea[COUNT_ROW - 6][6] = AreaUnit(available: false, color: Colors.red);
   }
 
-
   Block createBlock() {
-    return BlockProvider.randomBlock();
+//    return BlockProvider.randomBlock();
+    return BlockS.create();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(color: colorBackgroundApp,
+      body: Container(
+          color: colorBackgroundApp,
           child: Center(
               child: GestureDetector(
+                  onTap: () {
+                    rotateBlock(block);
+                  },
                   onVerticalDragEnd: (details) {
-                    while(moveBlockDown(block)){
-                      setState(() {
-                        initGameAreaTemp();
-                        copyBlockToGameAreaTemp(block);
-                      });
-                    }
-                    print("onVerticalDragEnd details="+details.primaryVelocity.toString());
+                    moveBlockToGround(details);
                   },
                   onHorizontalDragUpdate: (detail) {
                     if (!draging) {
                       draging = true;
-                      setState(() {
-                        bool isMove = false;
-                        if (detail.primaryDelta > 0) {
-                          isMove = moveBlockRight(block);
-                        } else {
-                          isMove = moveBlockLeft(block);
-                        }
-
-                        if (isMove) {
-                          initGameAreaTemp();
-                          copyBlockToGameAreaTemp(block);
-                        }
-                      });
-                      print("primarydelta"+detail.primaryDelta.toString());
-                      print("delta="+detail.delta.toString());
+                      moveBlockHorizontal(detail);
+//                      print("primarydelta"+detail.primaryDelta.toString());
+//                      print("delta="+detail.delta.toString());
 
                       Future.delayed(Duration(milliseconds: delayDrag), () {
                         draging = false;
@@ -212,15 +198,43 @@ class _MyHomePageState extends State<MyHomePage> {
                     }
                   },
                   child: Container(
-                      decoration: BoxDecoration(border: Border.all(width: 12, color: colorBorderGameArea),
+                      decoration: BoxDecoration(
+                          border:
+                              Border.all(width: 12, color: colorBorderGameArea),
                           borderRadius: BorderRadius.all(Radius.circular(8))),
                       child: Column(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: buildGameArea()
-                      )))
-          )),
+                          children: buildGameArea()))))),
     );
+  }
+
+  void moveBlockHorizontal(DragUpdateDetails detail) {
+    setState(() {
+      bool isMove = false;
+      if (detail.primaryDelta > 0) {
+        // right
+        isMove = moveBlockRight(block);
+      } else {
+        // left
+        isMove = moveBlockLeft(block);
+      }
+
+      if (isMove) {
+        initGameAreaTemp();
+        copyBlockToGameAreaTemp(block);
+      }
+    });
+  }
+
+  void moveBlockToGround(DragEndDetails details) {
+    while (moveBlockDown(block)) {
+      setState(() {
+        initGameAreaTemp();
+        copyBlockToGameAreaTemp(block);
+      });
+    }
+    print("onVerticalDragEnd details=" + details.primaryVelocity.toString());
   }
 
   List<Widget> buildGameArea() {
@@ -258,13 +272,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Container buildAreaUnitView(Color color) {
-    return Container(width: SIZE_AREA_UNIT, height: SIZE_AREA_UNIT,
-        decoration: BoxDecoration(color: color,
+    return Container(
+        width: SIZE_AREA_UNIT,
+        height: SIZE_AREA_UNIT,
+        decoration: BoxDecoration(
+            color: color,
             border: Border.all(width: 1, color: colorBorderAreaUnit)));
   }
 
   bool isBlockCrashOnGround(Block block) {
-    for (Coordinate c in block.currentCoordinatesOnGameArea) {
+    for (Coordinate c in block.getBlockCurrentRotate()) {
       if (c.row + 1 < COUNT_ROW) {
         if (!gameArea[c.row + 1][c.col].available) {
           return true;
@@ -274,5 +291,13 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     return false;
+  }
+
+  void rotateBlock(Block block) {
+    setState(() {
+      block.rotate();
+      initGameAreaTemp();
+      copyBlockToGameAreaTemp(block);
+    });
   }
 }
