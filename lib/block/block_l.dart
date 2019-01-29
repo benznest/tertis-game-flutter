@@ -38,10 +38,10 @@ class BlockL {
 
   static List<Coordinate> getCoordinateRotate3() {
     List<Coordinate> list = List();
+    list.add(Coordinate(row: 0, col: 1));
     list.add(Coordinate(row: 0, col: 2));
     list.add(Coordinate(row: 1, col: 2));
     list.add(Coordinate(row: 2, col: 2));
-    list.add(Coordinate(row: 2, col: 1));
     return list;
   }
 

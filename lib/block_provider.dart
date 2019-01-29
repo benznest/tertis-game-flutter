@@ -10,7 +10,7 @@ import 'package:tertis_game_flutter/coordinate.dart';
 
 class BlockProvider {
 
-  static const int COUNT_BLOCK_TYPE = 1;
+  static const int COUNT_BLOCK_TYPE = 4;
   static const int BLOCK_S = 0;
   static const int BLOCK_T = 1;
   static const int BLOCK_L = 2;

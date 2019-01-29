@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Timer timer;
 
-  int speed = 500;
+  int speed = 1000;
   int delayDrag = 200;
   Block block;
   bool draging = false;
@@ -77,9 +77,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (isBlockCrashOnGround(block)) {
         copyBlockToGameArea(block);
+        clearCompleteLine();
         block = createBlock();
       }
     });
+  }
+
+  void clearCompleteLine() {
+    int row =0;
+    while(row < COUNT_ROW){
+      int countBlock = 0;
+      for (int col = 0; col < COUNT_COL; col++) {
+        if(!gameArea[row][col].available){
+          countBlock++;
+        }else{
+          break;
+        }
+      }
+
+      if(countBlock == COUNT_COL){
+        removeLineOnGameArea(row);
+        row--;
+      }
+
+      row++;
+    }
+  }
+
+  void removeLineOnGameArea(int row){
+    List<AreaUnit> list = List.of(gameArea.first);
+    gameArea.removeAt(row);
+    gameArea.insert(0,list);
   }
 
   bool moveBlockDown(Block block) {
@@ -183,8 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Block createBlock() {
-//    return BlockProvider.randomBlock();
-    return BlockL.create();
+    return BlockProvider.randomBlock();
   }
 
   @override
@@ -209,9 +236,9 @@ class _MyHomePageState extends State<MyHomePage> {
 //                      print("primarydelta"+detail.primaryDelta.toString());
 //                      print("delta="+detail.delta.toString());
                             Future.delayed(Duration(milliseconds: delayDrag),
-                                () {
-                              draging = false;
-                            });
+                                    () {
+                                  draging = false;
+                                });
                           }
                         },
                         child: Container(
@@ -219,7 +246,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               border: Border.all(
                                   width: 12, color: colorBorderGameArea),
                               borderRadius:
-                                  BorderRadius.all(Radius.circular(8))),
+                              BorderRadius.all(Radius.circular(8))),
                           child: Column(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
