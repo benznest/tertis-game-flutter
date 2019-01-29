@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tertis_game_flutter/area_unit.dart';
 import 'package:tertis_game_flutter/block.dart';
+import 'package:tertis_game_flutter/block/block_l.dart';
 import 'package:tertis_game_flutter/block/block_s.dart';
 import 'package:tertis_game_flutter/block_provider.dart';
 import 'package:tertis_game_flutter/coordinate.dart';
@@ -69,9 +70,10 @@ class _MyHomePageState extends State<MyHomePage> {
       moveBlockDown(block);
       copyBlockToGameAreaTemp(block); //copy block to game area temp.
 
-      print("Start block row=" + block.coordinatesBlockAreaStart.row.toString());
-      print("Start block col=" + block.coordinatesBlockAreaStart.col.toString());
-
+      print(
+          "Start block row=" + block.coordinatesBlockAreaStart.row.toString());
+      print(
+          "Start block col=" + block.coordinatesBlockAreaStart.col.toString());
 
       if (isBlockCrashOnGround(block)) {
         copyBlockToGameArea(block);
@@ -109,7 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
       c.col = c.col + 1;
     }
 
-
     return true;
   }
 
@@ -125,7 +126,6 @@ class _MyHomePageState extends State<MyHomePage> {
     for (Coordinate c in block.currentCoordinatesOnGameArea) {
       c.col = c.col - 1;
     }
-
 
     return true;
   }
@@ -184,7 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Block createBlock() {
 //    return BlockProvider.randomBlock();
-    return BlockS.create();
+    return BlockL.create();
   }
 
   @override
@@ -200,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           rotateBlock(block);
                         },
                         onVerticalDragEnd: (details) {
-                          moveBlockToGround(details);
+                          moveBlockToGround(block);
                         },
                         onHorizontalDragUpdate: (detail) {
                           if (!draging) {
@@ -208,17 +208,18 @@ class _MyHomePageState extends State<MyHomePage> {
                             moveBlockHorizontal(detail);
 //                      print("primarydelta"+detail.primaryDelta.toString());
 //                      print("delta="+detail.delta.toString());
-
-                            Future.delayed(Duration(milliseconds: delayDrag), () {
+                            Future.delayed(Duration(milliseconds: delayDrag),
+                                () {
                               draging = false;
                             });
                           }
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                              border:
-                              Border.all(width: 12, color: colorBorderGameArea),
-                              borderRadius: BorderRadius.all(Radius.circular(8))),
+                              border: Border.all(
+                                  width: 12, color: colorBorderGameArea),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(8))),
                           child: Column(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -230,21 +231,28 @@ class _MyHomePageState extends State<MyHomePage> {
                     borderRadius: BorderRadius.all(Radius.circular(8))),
                 margin: EdgeInsets.only(left: 32, right: 32, bottom: 16),
                 padding: EdgeInsets.all(6),
-                child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Expanded(child: Container(
-                        child: Icon(Icons.keyboard_arrow_left, size: 36, color: Colors.white),
-                      )),
-                      Expanded(child: Container(
-                        child: Icon(Icons.keyboard_arrow_down, size: 36, color: Colors.white),
-                      )),
-                      Expanded(child: Container(
-                        child: Icon(Icons.keyboard_arrow_right, size: 36, color: Colors.white),
-                      )),
-                    ]))
+                child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                  buildButtonControl(Icons.keyboard_arrow_left, () {
+                    moveBlockLeft(block);
+                  }),
+                  buildButtonControl(Icons.keyboard_arrow_down, () {
+                    moveBlockToGround(block);
+                  }),
+                  buildButtonControl(Icons.keyboard_arrow_right, () {
+                    moveBlockRight(block);
+                  }),
+                ]))
           ])),
     );
+  }
+
+  Expanded buildButtonControl(IconData icon, Function() onTap) {
+    return Expanded(
+        child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              child: Icon(icon, size: 36, color: Colors.white),
+            )));
   }
 
   void moveBlockHorizontal(DragUpdateDetails detail) {
@@ -265,7 +273,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void moveBlockToGround(DragEndDetails details) {
+  void moveBlockToGround(Block block) {
     while (moveBlockDown(block)) {
       setState(() {
         initGameAreaTemp();
