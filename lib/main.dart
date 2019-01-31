@@ -52,6 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool draging = false;
 
   int countLine = 0;
+  bool gameRunning = true;
 
   @override
   void initState() {
@@ -73,26 +74,33 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void process() {
-    setState(() {
-      initGameAreaTemp(); // clear game area temp
-      moveBlockDown(block);
-      copyBlockToGameAreaTemp(block); //copy block to game area temp.
+    if(gameRunning) {
+      setState(() {
+        initGameAreaTemp(); // clear game area temp
+        moveBlockDown(block);
+        copyBlockToGameAreaTemp(block); //copy block to game area temp.
 
-      if (isBlockCrashOnGround(block)) {
-        onBlockToGround();
-      }
+        if (isBlockCrashOnGround(block)) {
+          onBlockToGround();
+        }
 
-      initGameAreaNextBlock();
-      copyBlockToGameAreaNextBlock(blockNext);
-    });
+        initGameAreaNextBlock();
+        copyBlockToGameAreaNextBlock(blockNext);
+      });
+    }
   }
 
   void onBlockToGround() {
-    copyBlockToGameArea(block);
-    initGameAreaTemp();
-    clearCompleteLine();
-    block = blockNext;
-    blockNext = createBlock();
+    bool moveBlockSuccess = copyBlockToGameArea(block);
+    if(moveBlockSuccess) {
+      initGameAreaTemp();
+      clearCompleteLine();
+      block = blockNext;
+      blockNext = createBlock();
+    }else{
+      gameRunning = false;
+      showGameOverDialog();
+    }
   }
 
   void clearCompleteLine() {
@@ -186,10 +194,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void copyBlockToGameArea(Block block) {
+  bool copyBlockToGameArea(Block block) {
     for (Coordinate c in block.currentCoordinatesOnGameArea) {
-      gameArea[c.row][c.col] = AreaUnit(color: block.color, available: false);
+      if( gameArea[c.row][c.col].available) {
+        gameArea[c.row][c.col] = AreaUnit(color: block.color, available: false);
+      }else{
+        return false;
+      }
     }
+    return true;
   }
 
   void copyBlockToGameAreaNextBlock(Block block) {
@@ -535,6 +548,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void restart(){
     setState(() {
+      gameRunning = true;
       initGameArea();
       initGameAreaTemp();
       initGameAreaNextBlock();
@@ -543,4 +557,36 @@ class _MyHomePageState extends State<MyHomePage> {
       countLine = 0;
     });
   }
+
+  void showGameOverDialog() {
+    // flutter defined function
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+            content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              Text("Game Over ):",
+                  style: TextStyle(
+                      fontSize: 32,
+                      color: Colors.pink[800],
+                      fontWeight: FontWeight.bold)),
+              RaisedButton(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                color: Colors.blue[500],
+                child: Text("Play again",
+                    style: TextStyle(
+                        fontSize: 22,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  restart();
+                },
+              )
+            ]));
+      },
+    );
+  }
+
 }

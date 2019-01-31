@@ -22,6 +22,13 @@ class Block {
     return coordinates[0];
   }
 
+  updateCurrentCoordinateOnGameAreaWithStart(){
+    for(Coordinate c in currentCoordinatesOnGameArea){
+      c.row += coordinatesBlockAreaStart.row;
+      c.col += coordinatesBlockAreaStart.col;
+    }
+  }
+
   rotate() {
     List<Coordinate> coordinatesNextBlock = getBlockNextRotate();
     List<Coordinate> listNewCoordinateOnGameArea = List();
